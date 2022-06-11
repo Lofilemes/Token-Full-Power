@@ -25,7 +25,7 @@ contract TokenFullPower {
 
     // Modifiers
     modifier isOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Must be the owner");
         _;
     }
 
@@ -37,11 +37,18 @@ contract TokenFullPower {
     //Constructor
     constructor(uint256 total) {
         totalsupply = total;
-        addressToBalance[address(this)] = totalsupply;
+        addressToBalance[address(msg.sender)] = totalsupply;
         owner = msg.sender;
         contractState = Status.ACTIVE;
     }
 
+    function state() public view returns(Status) {
+        return contractState;
+    }
+
+    function whoIsOwner() public view returns(address) {
+        return owner;
+    }
     //Public Functions
     // Retornar o valor carregado
 		// Ver se o total suply está na carteira do contrato
@@ -69,6 +76,7 @@ contract TokenFullPower {
             quantity <= addressToBalance[msg.sender],
             "Insufficient Balance to Transfer"
         );
+        require(address(receiver) != address(0), "Account address can not be 0");
         addressToBalance[msg.sender] = addressToBalance[msg.sender] - quantity;
         addressToBalance[receiver] = addressToBalance[receiver] + quantity;
 
@@ -130,7 +138,7 @@ contract TokenFullPower {
 		// não ativar caso o contrato já esteja ativo
 		// verificar se o status é ATIVO
 
-    function activate() public isOwner returns (bool) {
+    function activable() public isOwner returns (bool) {
         require(contractState == Status.PAUSED, "Contract is already Active");
         contractState = Status.ACTIVE;
         return true;
