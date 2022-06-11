@@ -4,31 +4,42 @@
 ![SPDX](https://img.shields.io/badge/STASPDX--License--IdentifierTUS-Unlicense-brightgreen)
 
 The goal of the Full Power Token Season Finale project is to create a token in the ERC20 format that can be distributed among participants in the same network, and to implement all the tests for this contract. 
-# Functions
-[x] MINT
-[X] BURN
-[X] PAUSABLE
+
+## Functions
+
+### Mint 
+
+Possibility of new tokens can be created and distributed (or not) within the network.
+### Burn
+
+Checks for changes in the total number of tokens on the network if any token no longer exists.
+
+### Pausable
+
+Trades and transfers can be paused and prevented from being made for as long as the contract owner wants.
 
 
 ## Tech
+
 - Visual Studio Code 
 - Solidity
 - JavaScript
+- Hardhat
 
 ## Installation
-
-#### Hardhat
-Hardhat is used through a local installation in your project. This way your environment will be reproducible, and you will avoid future version conflicts. To install it, you need to create an npm project by going to an empty folder, running npm init, and following its instructions. 
 
 Once your project is ready, you should run:
 
 _npm_
 ```sh
-npm install --save-dev hardhat
+npm install
+npm test
 ```
 _yarn_
 ```sh
-yarn add --dev hardhat
+yarn install
+yarn test
+
 ```
 
 site: (https://hardhat.org/getting-started)
