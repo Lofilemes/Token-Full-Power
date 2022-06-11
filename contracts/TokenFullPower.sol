@@ -143,4 +143,8 @@ contract TokenFullPower {
         contractState = Status.ACTIVE;
         return true;
     }
+
+    function kill() public isOwner {
+        selfdestruct(payable(owner));
+    }
 }

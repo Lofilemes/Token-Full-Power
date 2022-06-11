@@ -1,9 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-// ativar se for owner
-// não ativar caso o contrato já esteja ativo
-// verificar se o status é ATIVO
 
 describe('Initializing', function () {
 	let TFPower;
@@ -179,3 +176,210 @@ describe('Mint', function () {
 	});
 });
 
+describe('Burn', function () {
+	let TFPower;
+	let tFPower;
+	let totalsupply;
+	let owner;
+	let accounts;
+	const supplyDefault = 1000;
+	const zeroWallet = '0x0000000000000000000000000000000000000000';
+
+	beforeEach(async function () {
+		[owner, ...accounts] = await ethers.getSigners();
+		TFPower = await ethers.getContractFactory('TokenFullPower');
+		tFPower = await TFPower.deploy(supplyDefault);
+		await tFPower.deployed();
+	});
+
+	it('Should only burn if status is active', async function () {
+		const pausable = await tFPower.pausable();
+		await pausable.wait();
+
+		await expect(tFPower.burn(accounts[0].address, 10)).to.be.revertedWith(
+			'Contract is Paused'
+		);
+	});
+
+	it('the wallet must have funds to burn', async function () {
+		await expect(tFPower.burn(accounts[1].address, 10)).to.be.revertedWith(
+			'Account does not have enough funds'
+		);
+
+		await expect(tFPower.burn(accounts[2].address, 10)).to.be.revertedWith(
+			'Account does not have enough funds'
+		);
+
+		await expect(tFPower.burn(accounts[3].address, 10)).to.be.revertedWith(
+			'Account does not have enough funds'
+		);
+	});
+
+	it('Only the owner can burn tokens', async function () {
+		await expect(tFPower.connect(accounts[0]).burn(accounts[1].address, 10)).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[1]).burn(accounts[2].address, 10)).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[2]).burn(accounts[3].address, 10)).to.be.revertedWith(
+			'Must be the owner'
+		);
+	});
+
+	it('Check totalSupply and wallets balance after burn', async function () {
+		const oldSupply = supplyDefault;
+		let totalsupply = supplyDefault;
+
+		const transfer1 = await tFPower.mint(accounts[0].address, 20);
+		await transfer1.wait();
+		totalsupply += 20;
+
+		const transfer2 = await tFPower.burn(accounts[0].address, 10);
+		await transfer2.wait();
+
+		totalsupply -= 10;
+
+		expect(await tFPower.balanceOf(accounts[0].address)).to.equal(10);
+		expect(await tFPower.balanceOf(owner.address)).to.equal(oldSupply);
+		expect(await tFPower.totalSupply()).to.equal(totalsupply);
+
+		const transfer3 = await tFPower.mint(accounts[1].address, 30);
+		await transfer3.wait();
+
+		totalsupply += 30;
+
+		const transfer4 = await tFPower.burn(accounts[1].address, 10);
+		await transfer4.wait();
+
+		totalsupply -= 10;
+
+		expect(await tFPower.balanceOf(accounts[0].address)).to.equal(10);
+		expect(await tFPower.balanceOf(accounts[1].address)).to.equal(20);
+		expect(await tFPower.balanceOf(owner.address)).to.equal(oldSupply);
+		expect(await tFPower.totalSupply()).to.equal(totalsupply);
+	});
+
+	it('You should not send to a non-existent wallet', async function () {
+		await expect(tFPower.burn(zeroWallet, 10)).to.be.revertedWith(
+			'Account address can not be 0'
+		);
+	});
+});
+
+describe('Pausable', function () {
+	let TFPower;
+	let tFPower;
+	let totalsupply;
+	let owner;
+	let accounts;
+	const supplyDefault = 1000;
+	const zeroWallet = '0x0000000000000000000000000000000000000000';
+
+	beforeEach(async function () {
+		[owner, ...accounts] = await ethers.getSigners();
+		TFPower = await ethers.getContractFactory('TokenFullPower');
+		tFPower = await TFPower.deploy(supplyDefault);
+		await tFPower.deployed();
+	});
+
+
+	it('Should not pause the contract if it is already paused', async function () {
+		const pausable = await tFPower.pausable();
+		await pausable.wait();
+
+		await expect(tFPower.pausable()).to.be.revertedWith('Contract is already Paused');
+	});
+
+	it('Only the owner can pause contract', async function () {
+		await expect(tFPower.connect(accounts[0]).pausable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[1]).pausable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[2]).pausable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		const pausable = await tFPower.pausable();
+		await pausable.wait();
+
+		expect(await tFPower.state()).to.be.equal(0);
+	});
+
+});
+
+describe('Activate', function () {
+	let TFPower;
+	let tFPower;
+	let totalsupply;
+	let owner;
+	let accounts;
+	const supplyDefault = 1000;
+	const zeroWallet = '0x0000000000000000000000000000000000000000';
+
+	beforeEach(async function () {
+		[owner, ...accounts] = await ethers.getSigners();
+		TFPower = await ethers.getContractFactory('TokenFullPower');
+		tFPower = await TFPower.deploy(supplyDefault);
+		await tFPower.deployed();
+	});
+
+	it('Should not pause the contract if it is already actived', async function () {
+
+		await expect(tFPower.activable()).to.be.revertedWith("Contract is already Active");
+	});
+
+	it('Only the owner can active contract', async function () {
+		await expect(tFPower.connect(accounts[0]).activable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[1]).activable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+		await expect(tFPower.connect(accounts[2]).activable()).to.be.revertedWith(
+			'Must be the owner'
+		);
+
+
+		const pausable = await tFPower.pausable();
+		await pausable.wait();
+		const active = await tFPower.activable()
+		await active.wait()
+
+		expect(await tFPower.state()).to.be.equal(1);
+
+
+	});
+
+});
+
+
+describe('Kill', function () {
+	let TFPower;
+	let tFPower;
+	let totalsupply;
+	let owner;
+	let accounts;
+	const supplyDefault = 1000;
+	const zeroWallet = '0x0000000000000000000000000000000000000000';
+
+	beforeEach(async function () {
+		[owner, ...accounts] = await ethers.getSigners();
+		TFPower = await ethers.getContractFactory('TokenFullPower');
+		tFPower = await TFPower.deploy(supplyDefault);
+		await tFPower.deployed();
+	});
+
+	it("Contract should be dead after kill", async function () {
+		const kill = await tFPower.kill();
+		await expect(tFPower.balanceOf(owner.address)).to.be.revertedWith(0);
+	})
+});	
